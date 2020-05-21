@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "gqltype"
+version = "0.1.0"
+description = "Simple way to define GraphQL schema"
+authors = ["miphreal <miphreal@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "~3.6.0 | ~3.7.0 | ~3.8.0"
+graphql-core = "^3.1.1"
+aniso8601 = "^8.0.0"
+
+[tool.poetry.dev-dependencies]
+black = "^19.10b0"
+flake8 = "^3.7.9"
+isort = "^4.3.21"
+mypy = "^0.761"
+pre-commit = "^1.21.0"
+pylint = "^2.4.4"
+pytest = "^5.3.4"
+pytest-cov = "^2.8.1"
+pytest-asyncio = "^0.10.0"
+pydantic = "^1.4"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

@@ -49,6 +49,9 @@ def to_graphql_arguments(arguments, ctx: TransformContext):
         if arg_type is None:
             raise TypeError(f"Cannot find type definition for argument '{arg_name}'")
 
+        if ctx.auto_graphql_id and arg_name == "id" and arg_type is str:
+            arg_type = ID
+
         kw = {}
 
         if isinstance(default, enum.Enum):

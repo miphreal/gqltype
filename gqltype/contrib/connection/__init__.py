@@ -1,3 +1,8 @@
+"""
+Implementaion of Relay's connections approach.
+
+https://relay.dev/graphql/connections.htm
+"""
 from abc import ABC
 from dataclasses import dataclass
 from functools import wraps

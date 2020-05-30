@@ -61,12 +61,6 @@ class Person(Node):
     height: int
     skin_color: str
 
-    films: Connection(Person, Film)
-    # species: List[Species]
-    # filmConnection: connectionFromUrls('PersonFilms', 'films', FilmType),
-    # starshipConnection: connectionFromUrls('PersonStarships', 'starships', StarshipType),
-    # vehicleConnection: connectionFromUrls('PersonVehicles', 'vehicles', VehicleType),
-
     @with_connection_pagination
     async def resolve_starships(self, **kwargs) -> Connection(Person, Starship):
         data = await storage.get_objects("starships", self["starships"])

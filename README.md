@@ -27,7 +27,7 @@ $ poetry add gqltype
 
 ## Quick intro
 
-Let's say we want to model the schema mentioned in the beginning of https://graphql.org/learn/schema/ tutorial.
+Let's say we want to model the schema mentioned at the beginning of https://graphql.org/learn/schema/ tutorial.
 
 ```python
 from dataclasses import dataclass

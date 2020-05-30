@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gqltype"
-version = "0.1.0"
+version = "0.1.1"
 description = "Simple way to define GraphQL schema"
 authors = ["miphreal <miphreal@gmail.com>"]
 license = "MIT"

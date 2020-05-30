@@ -6,6 +6,8 @@ from graphql.language import ast
 
 
 def serialize(value: PyDate):
+    if not isinstance(value, PyDate):
+        value = aniso8601.parse_date(value)
     return value.isoformat()
 
 

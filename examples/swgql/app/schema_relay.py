@@ -19,7 +19,7 @@ from starlette.applications import Starlette
 from starlette.routing import Route
 import uvicorn
 
-from storage import storage
+from .storage import storage
 
 
 class Gender(Enum):
@@ -44,7 +44,7 @@ class Starship(Node):
 
 
 class Film(Node):
-    name: str
+    title: str
 
 
 class Person(Node):
@@ -101,25 +101,19 @@ def resolve_node_type(value, info, interface_type):
     }.get(id_prefix)
 
 
-class Query:
-    async def resolve_node(
-        self, id: str
-    ) -> gqltype.T(Node, resolve_type=resolve_node_type):
-        obj_type = id.split(":", 1)[0]
-        return await storage.get_object(obj_type, id)
-
-    async def resolve_person(self, person_id: str) -> Optional[Person]:
-        return await storage.get_object("people", person_id)
-
-    @with_connection_pagination
-    async def resolve_people(self, **kwargs) -> Connection(Query, Person):
-        data = await storage.get_objects("people")
-        return prepare_connection_slice(data, kwargs)
+async def node(id: str) -> gqltype.T(Node, resolve_type=resolve_node_type):
+    obj_type = id.split(":", 1)[0]
+    return await storage.get_object(obj_type, id)
 
 
-routes = [Route("/", GraphQLApp(schema=gqltype.Schema(queries=[Query])))]
+async def person(person_id: str) -> Optional[Person]:
+    return await storage.get_object("people", person_id)
 
-app = Starlette(routes=routes)
 
-if __name__ == "__main__":
-    uvicorn.run("app:app", reload=True)
+@with_connection_pagination
+async def people(**params) -> Connection(Person):
+    data = await storage.get_objects("people")
+    return prepare_connection_slice(data, params)
+
+
+schema = gqltype.Schema(queries=[node, person, people])

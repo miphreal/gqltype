@@ -11,19 +11,20 @@ ObjectTypeName = Literal[
 
 
 class Storage:
-    api_url = "http://swapi.dev/api"
+    """Simple caching proxy to the RESTful swapi.dev"""
 
+    api_url = "http://swapi.dev/api"
     local_cache_file = pathlib.Path("/tmp/sw.json")
     loaded_cache = None
 
-    def cache_set(self, key, val):
+    def cache_set(self, key: str, val: List[dict]):
         cache = self.loaded_cache or {}
         cache[key] = val
         self.loaded_cache = cache
         with self.local_cache_file.open("w") as f:
             f.write(json.dumps(cache))
 
-    def cache_get(self, key, *default):
+    def cache_get(self, key: str, *default) -> List[dict]:
         if self.loaded_cache is None and self.local_cache_file.exists():
             with self.local_cache_file.open("r") as f:
                 self.loaded_cache = json.loads(f.read())
@@ -32,10 +33,10 @@ class Storage:
             return cache[key]
         return cache.get(key, default[0])
 
-    def url_to_id(self, value):
-        if value.startswith(self.api_url):
-            return value.replace(self.api_url, "").strip("/").replace("/", ":")
-        return value
+    def url_to_id(self, url: str) -> str:
+        if url.startswith(self.api_url):
+            return url.replace(self.api_url, "").strip("/").replace("/", ":")
+        return url
 
     async def get_objects(
         self, objects_type: ObjectTypeName, ids: Optional[str] = None

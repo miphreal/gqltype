@@ -16,17 +16,19 @@ class Node(ABC):
 
 
 def _connection_type(
-    parent_t,
-    t,
+    parent_t=None,
+    t=None,
     extend_page_info=None,
     extend_connection=None,
     extend_edge=None,
     prefix=None,
 ):
     """Generates GraphQL Connection type"""
-    if not prefix:
+    if t is None and parent_t is not None:
+        t, parent_t = parent_t, t
+    if not prefix and t:
         type_name = gqltype.utils.get_name(t)
-        parent_type_name = gqltype.utils.get_name(parent_t)
+        parent_type_name = gqltype.utils.get_name(parent_t) if parent_t else ""
         prefix = parent_type_name + type_name
 
     return NamedTuple(

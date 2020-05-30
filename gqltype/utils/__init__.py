@@ -7,7 +7,6 @@ from .cls import (
     get_interfaces,
 )
 from .func import (
-    preserve_params_definition,
     extend_params_definition,
     override_params_definition,
 )

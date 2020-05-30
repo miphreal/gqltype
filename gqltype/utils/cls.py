@@ -126,10 +126,6 @@ def get_attr_definitions(cls, only_props=False, only_funcs=False):
             # getting annotation for returning func value
             annotation = get_annotations(value).get("return", MISSING)
 
-        type_ = annotation
-        if not type_ and value:
-            type_ = value.__class__
-
         logger.debug("[INSPECT:%s] Added '%s' field.", cls.__qualname__, attr)
         attrs[attr] = AttrDefinition(
             name=attr, value=value, annotation=annotation, type_=annotation,

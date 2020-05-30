@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from gqltype.tests.utils import *
+from tests.utils import *
 
 from gqltype import Schema, T
 

@@ -7,7 +7,9 @@ from functools import partial, wraps
 
 import graphql
 
+from ..context import TransformContext
 from ..decorators import is_query, is_subscription, is_mutation
+from ..graphql_types import ID
 from ..utils import (
     cache_type,
     get_name,
@@ -25,22 +27,22 @@ from .type_container import T
 logger = logging.getLogger(__name__)
 
 
-def to_field(t, ctx):
+def to_field(t, ctx: TransformContext):
     params = ("args", "resolve", "subscribe", "description", "deprecation_reason")
     return graphql.GraphQLField(t, **{k: ctx[k] for k in params if k in ctx})
 
 
-def to_input_field(t, ctx):
+def to_input_field(t, ctx: TransformContext):
     params = ("description", "default_value", "out_name")
     return graphql.GraphQLInputField(t, **{k: ctx[k] for k in params if k in ctx})
 
 
-def to_arg(t, ctx):
+def to_arg(t, ctx: TransformContext):
     params = ("description", "default_value", "out_name")
     return graphql.GraphQLArgument(t, **{k: ctx[k] for k in params if k in ctx})
 
 
-def to_graphql_arguments(arguments, ctx):
+def to_graphql_arguments(arguments, ctx: TransformContext):
     args = {}
 
     for arg_name, arg_type, default in arguments:
@@ -55,23 +57,19 @@ def to_graphql_arguments(arguments, ctx):
         if default is not MISSING:
             kw["default_value"] = default
 
-        is_optional_arg = None
-
-        if not ctx.explicit_argument_nullability:
-            is_optional_arg = default is not MISSING
-
-        kw["out_name"] = arg_name
-        arg_type = ctx.transformer.transform(
-            arg_type, allow_null=is_optional_arg, is_input_type=True
+        gql_arg_type = ctx.transformer.transform(
+            arg_type, allow_null=MISSING, is_input_type=True
         )
 
-        t = to_arg(arg_type, ctx(**kw))
+        kw["out_name"] = arg_name
+
+        t = to_arg(gql_arg_type, ctx(**kw))
         args[ctx.hook__convert_name(arg_name, for_type=t)] = t
 
     return args
 
 
-def iterate_class_attributes_for_output_type(cls, ctx):
+def iterate_class_attributes_for_output_type(cls, ctx: TransformContext):
     resolve_prefix = ctx.resolve_method_name_prefix
     subscribe_prefix = ctx.subscribe_method_name_prefix
 
@@ -133,7 +131,9 @@ def iterate_class_attributes_for_output_type(cls, ctx):
         if name in names:
             continue
 
-        resolve_fn, arguments = ctx.hook__prepare_field_resolver(name, resolve_fn)
+        resolve_fn, arguments = ctx.hook__prepare_field_resolver(
+            name, definition, resolve_fn
+        )
         graphql_arguments = to_graphql_arguments(arguments, ctx)
 
         if ctx.preprocess_resolver_params_values:
@@ -146,17 +146,22 @@ def iterate_class_attributes_for_output_type(cls, ctx):
         field_kw["resolve"] = resolve_fn
         field_kw["args"] = graphql_arguments
 
+        if isinstance(definition.type_, T):
+            field_kw.update(definition.type_.graphql_kw)
+
         yield name, definition, field_kw
         names.add(name)
 
 
-def _lazy_fields(ctx, lazy_fields):
+def _lazy_fields(ctx: TransformContext, lazy_fields):
     ctx = ctx()  # clone context
 
     def lazy():
         fields = OrderedDict()
 
         for name, type_, field_kw in lazy_fields:
+            if ctx.auto_graphql_id and name == "id" and type_ is str:
+                type_ = ID
             gql_t = ctx.transformer.transform(type_)
             field = to_field(gql_t, ctx(**field_kw))
             fields[ctx.hook__convert_name(name, for_type=field)] = field
@@ -167,7 +172,7 @@ def _lazy_fields(ctx, lazy_fields):
 
 
 @cache_type
-def _transform_class_to_output_type(cls, ctx):
+def _transform_class_to_output_type(cls, ctx: TransformContext):
     fields = []
 
     dc_fields = {}
@@ -185,8 +190,11 @@ def _transform_class_to_output_type(cls, ctx):
 
         fields.append((name, type_, field_kw))
 
+    if not fields:
+        raise TypeError(f"Please define proper attributes on {cls.__qualname__}")
+
     if is_interface(cls):
-        resolve_type = ctx.get("resolve_type")
+        resolve_type = ctx.get("resolve_type", getattr(cls, "resolve_type", None))
 
         if resolve_type is None:
             resolve_type = ctx.hook__prepare_default_interface_type_resolver(cls)
@@ -213,7 +221,7 @@ def _transform_class_to_output_type(cls, ctx):
     )
 
 
-def _lazy_input_fields(ctx, lazy_fields):
+def _lazy_input_fields(ctx: TransformContext, lazy_fields):
     ctx = ctx()  # clone context
 
     def lazy():
@@ -232,7 +240,7 @@ def _lazy_input_fields(ctx, lazy_fields):
     return lazy
 
 
-def iterate_class_attributes_for_input_type(cls, ctx):
+def iterate_class_attributes_for_input_type(cls, ctx: TransformContext):
     attrs = [*get_attr_definitions(cls, only_props=True).values()]
 
     for definition in attrs:
@@ -256,7 +264,7 @@ def iterate_class_attributes_for_input_type(cls, ctx):
 
 
 @cache_type
-def _transform_class_to_input_type(cls, ctx):
+def _transform_class_to_input_type(cls, ctx: TransformContext):
     fields = []
 
     dc_fields = {}
@@ -285,11 +293,11 @@ def _transform_class_to_input_type(cls, ctx):
     )
 
 
-def transform(t, ctx):
+def transform(t, ctx: TransformContext):
     if ctx.get("is_input_type"):
         return _transform_class_to_input_type(t, ctx)
     return _transform_class_to_output_type(t, ctx)
 
 
-def can_transform(t, ctx):
+def can_transform(t, ctx: TransformContext):
     return is_class(t) and not issubclass(t, enum.Enum)

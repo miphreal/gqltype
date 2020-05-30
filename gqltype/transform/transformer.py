@@ -5,6 +5,7 @@ from typing import Optional
 import graphql
 
 from ..context import TransformContext, RootContext
+from ..decorators import get_extra_schema_options
 from ..utils import resolve_thunk, UnwrappedType, MISSING
 from . import (
     transform_graphql_type,
@@ -46,11 +47,15 @@ class Transformer:
 
         # Unwrap type container
         if isinstance(t, T):
-            allow_null = t.allow_null if allow_null is not MISSING else MISSING
+            allow_null = t.allow_null if t.allow_null is not MISSING else allow_null
             kw = {**t.graphql_kw, **kw}
             return self.transform(t.type_, allow_null=allow_null, **kw)
 
         ctx = self.ctx(origin_type=t, allow_null=allow_null, **kw)
+
+        extra_options = get_extra_schema_options(t)
+        if extra_options:
+            ctx = ctx(**extra_options)
 
         gql_t = self._transform(t, ctx=ctx)
         # The case with unwrapping types

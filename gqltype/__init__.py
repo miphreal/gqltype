@@ -1,6 +1,5 @@
-from .decorators import query, mutation, subscription
+from .decorators import query, resolver, mutation, subscription, schema_options
 from .utils import (
-    preserve_params_definition,
     extend_params_definition,
     override_params_definition,
 )

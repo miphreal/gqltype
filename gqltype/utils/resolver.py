@@ -13,10 +13,10 @@ def _wrap_resolver(fn, ctx):
     spec = inspect.getfullargspec(fn)
     args = frozenset(spec.args + spec.kwonlyargs)
 
-    source_args = frozenset(name for name in ctx.source_argument_names if name in args)
-    info_args = frozenset(name for name in ctx.info_argument_names if name in args)
+    source_args = frozenset(name for name in ctx.source_param_names if name in args)
+    info_args = frozenset(name for name in ctx.info_param_names if name in args)
     extra_args = {
-        name: fn for name, fn in ctx.extra_special_arguments.items() if name in args
+        name: fn for name, fn in ctx.extra_special_params.items() if name in args
     }
 
     @wraps(fn)
@@ -36,7 +36,8 @@ def _wrap_resolver(fn, ctx):
     return wrap
 
 
-def prepare_default_field_resolver(ctx, name):
+def prepare_default_field_resolver(ctx, name, definition):
+    """Generate a field resolver when no resolvers were specified."""
     if ctx.name_converter:
         # if there's a name converter, try to access attributes via original names
         def default_field_resolver(source, info, **args):
@@ -50,24 +51,37 @@ def prepare_default_field_resolver(ctx, name):
     return default_field_resolver, ()
 
 
-def prepare_field_resolver(ctx, name, fn):
+def prepare_field_resolver(ctx, name, definition, fn):
+    """
+    Prepare a "resolve" function and information about its params.
+
+    It should return the "resolve" function itself and a list of
+    params accepted by corresponding field with information about parameter's type
+    and default value (i.e. the function should return two values: function and a list
+    of tuples where each tuple is (param_name, param_type, param_default_value)).
+
+    Note. if `ctx.preprocess_resolver_params` is True, it'll take care of absence
+    of special attributes (e.g. `source`, `info`, `self`, etc). Otherwise all "resolve"
+    functions must have `source` and `info` as their first parameters.
+    """
     if fn is None:
-        return ctx.hook__prepare_default_field_resolver(name)
+        return ctx.hook__prepare_default_field_resolver(name, definition)
 
     arguments, defaults, annotations = inspect_function(fn)
 
-    if ctx.preprocess_resolver_arguments:
+    if ctx.preprocess_resolver_params:
         fn = _wrap_resolver(fn, ctx)
 
         special_args = (
-            tuple(ctx.source_argument_names)
-            + tuple(ctx.info_argument_names)
-            + tuple(ctx.extra_special_arguments)
+            tuple(ctx.source_param_names)
+            + tuple(ctx.info_param_names)
+            + tuple(ctx.extra_special_params)
         )
+        # Eliminate special attributes from the list of accepted params
         arguments = [p for p in arguments if p not in special_args]
 
     else:
-        # consider first two args as `source` and `info`
+        # Consider first two args as `source` and `info`
         arguments = arguments[2:]
 
     fn_arguments = [

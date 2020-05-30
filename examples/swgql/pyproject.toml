@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "swgql"
+version = "0.1.0"
+description = "Example StarWars GraphQL server"
+authors = ["miphreal <miphreal@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "~3.8"
+starlette = "^0.13.4"
+uvicorn = "^0.11.5"
+gqltype = {"path" = "../.."}
+aiohttp = "^3.6.2"
+
+[tool.poetry.dev-dependencies]
+ipdb = "^0.13.2"
+starlette = "^0.13.4"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

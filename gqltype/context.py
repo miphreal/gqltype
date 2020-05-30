@@ -100,7 +100,7 @@ class PresetsContext(HooksContext):
             fn(val)
 
     def register_preset(self, name: str, fn) -> None:
-        self._context['preset__{}'.format(name)] = fn
+        self._context["preset__{}".format(name)] = fn
 
     def __setattr__(self, name, val):
         if name.startswith("preset__"):
@@ -115,21 +115,27 @@ class PresetsContext(HooksContext):
 
 
 class RootContext(PresetsContext):
+    debug: bool = False
+
     # Default options
     # - require explicit nullability definition with `Optional[T]`
     explicit_nullability: bool = True
-    # - if argument has a default value, it'll be considered as optional
-    explicit_argument_nullability: bool = False
     # - function prefixes to disntinquish resolve / mutate and subscribe methods
     resolve_method_name_prefix: str = "resolve_"
     mutate_method_name_prefix: str = "mutate_"
     subscribe_method_name_prefix: str = "subscribe_"
 
+    # Automatically conver output values to corresponding Enum type.
+    recognize_enum_output_values: bool = True
+
+    # Automatically convert "id" with type str to GraphQLID
+    auto_graphql_id: bool = True
+
     # Options for resolver
-    preprocess_resolver_arguments: bool = True
-    source_argument_names = ("obj", "self")
-    info_argument_names = ("info",)
-    extra_special_arguments = {
+    preprocess_resolver_params: bool = True
+    source_param_names = ("obj", "self")
+    info_param_names = ("info",)
+    extra_special_params = {
         "request": lambda call_ctx: call_ctx.info.context["request"]
     }
 

@@ -25,8 +25,5 @@ class T:
         type_ = kw.pop("type_", self.type_)
         return T(type_=type_, allow_null=allow_null, **{**self.graphql_kw, **kw})
 
-    def doc(self, description: str) -> T:
-        return self(description=description)
-
     def deprecated(self, why: str) -> T:
         return self(deprecation_reason=why)

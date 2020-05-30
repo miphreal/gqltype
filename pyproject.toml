@@ -1,13 +1,21 @@
 [tool.poetry]
 name = "gqltype"
-version = "0.1.1"
+version = "0.1.2"
 description = "Simple way to define GraphQL schema"
 authors = ["miphreal <miphreal@gmail.com>"]
 license = "MIT"
 
+readme = "README.md"
+
+homepage = "https://github.com/miphreal/gqltype"
+repository = "https://github.com/miphreal/gqltype"
+documentation = "https://github.com/miphreal/gqltype"
+
+keywords = ["GraphQL", "schema", "graphql-core"]
+
 [tool.poetry.dependencies]
 python = "~3.6 | ~3.7 | ~3.8"
-graphql-core = "*"
+graphql-core = ">=3.0"
 aniso8601 = "*"
 
 [tool.poetry.dev-dependencies]

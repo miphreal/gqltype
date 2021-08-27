@@ -10,4 +10,7 @@ def transform(t, ctx):
 
 
 def can_transform(t, ctx):
-    return t in SUPPORTED_TYPES
+    try:
+        return t in SUPPORTED_TYPES
+    except TypeError:
+        return False

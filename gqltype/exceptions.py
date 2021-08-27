@@ -1,4 +1,4 @@
-from typing import Optional, List, Union
+from typing import List
 
 from graphql import GraphQLError
 
@@ -21,21 +21,11 @@ class ForbiddenError(GeneralError):
 
 class UserInputError(GeneralError):
     code: str = "BAD_USER_INPUT"
-    errors: "List[ValidationError]"
+    errors: List[dict]
 
-    def __init__(self, *args, errors: "List[ValidationError]" = (), **kwargs):
+    def __init__(self, *args, errors: List[dict], **kwargs):
         super().__init__(*args, **kwargs)
         self.errors = errors
-        self.extensions.update(
-            errors=[self._format_validation_error(err) for err in errors]
-        )
-
-    def _format_validation_error(self, err):
-        data = {"message": err.message}
-        if err.code is not None:
-            data["code"] = err.code
-        if err.data is not None:
-            data["data"] = err.data
-        if err.fields is not None:
-            data["fields"] = err.fields
-        return data
+        if not self.extensions:
+            self.extensions = {}
+        self.extensions.update(errors=errors)

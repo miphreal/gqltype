@@ -1,4 +1,4 @@
-from aiohttp import web
+from aiohttp import web  # type: ignore
 import graphql
 import logging
 

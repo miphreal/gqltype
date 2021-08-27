@@ -11,7 +11,6 @@ from .func import (
     override_params_definition,
 )
 from .types import (
-    UnwrappedType,
     MISSING,
     NoneType,
     cache_type,
@@ -19,5 +18,10 @@ from .types import (
     get_name,
     filter_out_none_type,
     is_typing_type,
+    is_optional_type,
+    unwrap_optional_type,
     resolve_thunk,
+    meta,
+    unwrap_type_container,
+    is_type_container,
 )

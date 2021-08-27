@@ -1,6 +1,6 @@
 from datetime import timedelta as PyDuration
 
-import aniso8601
+import aniso8601  # type: ignore
 import graphql
 from graphql.language import ast
 

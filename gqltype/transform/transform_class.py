@@ -4,6 +4,7 @@ import enum
 import inspect
 import logging
 from functools import partial, wraps
+from typing import Set, Optional
 
 import graphql
 
@@ -21,7 +22,6 @@ from ..utils import (
     MISSING,
 )
 from ..utils.func import inspect_function
-from .type_container import T
 
 
 logger = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ def iterate_class_attributes_for_output_type(cls, ctx: TransformContext):
         *get_attr_definitions(cls, only_funcs=True).values(),
     ]
 
-    names = set()
+    names: Set[str] = set()
 
     for definition in attrs:
         if not (definition.annotation or definition.type_):
@@ -149,10 +149,11 @@ def iterate_class_attributes_for_output_type(cls, ctx: TransformContext):
         field_kw["resolve"] = resolve_fn
         field_kw["args"] = graphql_arguments
 
-        if isinstance(definition.type_, T):
-            field_kw.update(definition.type_.graphql_kw)
+        type_ = definition.type_
+        if ctx.auto_graphql_id and name == "id" and type_ is str:
+            type_ = ID
 
-        yield name, definition, field_kw
+        yield name, type_, field_kw
         names.add(name)
 
 
@@ -163,10 +164,8 @@ def _lazy_fields(ctx: TransformContext, lazy_fields):
         fields = OrderedDict()
 
         for name, type_, field_kw in lazy_fields:
-            if ctx.auto_graphql_id and name == "id" and type_ is str:
-                type_ = ID
             gql_t = ctx.transformer.transform(type_)
-            field = to_field(gql_t, ctx(**field_kw))
+            field = to_field(gql_t, field_kw)
             fields[ctx.hook__convert_name(name, for_type=field)] = field
 
         return fields
@@ -176,22 +175,7 @@ def _lazy_fields(ctx: TransformContext, lazy_fields):
 
 @cache_type
 def _transform_class_to_output_type(cls, ctx: TransformContext):
-    fields = []
-
-    dc_fields = {}
-    if is_dataclass(cls):
-        dc_fields = {f.name: f for f in dataclass_fields(cls)}
-
-    for name, definition, field_kw in iterate_class_attributes_for_output_type(
-        cls, ctx
-    ):
-        type_ = definition.type_
-
-        dataclass_field = dc_fields.get(name)
-        if dataclass_field:
-            field_kw.update(dataclass_field.metadata)
-
-        fields.append((name, type_, field_kw))
+    fields = list(iterate_class_attributes_for_output_type(cls, ctx))
 
     if not fields:
         raise TypeError(f"Please define proper attributes on {cls.__qualname__}")
@@ -231,11 +215,10 @@ def _lazy_input_fields(ctx: TransformContext, lazy_fields):
         fields = OrderedDict()
 
         for name, type_, field_kw in lazy_fields:
-            allow_null = "default_value" in field_kw or field_kw.get(
-                "allow_null", MISSING
-            )
-            gql_t = ctx.transformer.transform(type_, allow_null=allow_null)
-            field = to_input_field(gql_t, ctx(**field_kw))
+            if "default_value" in field_kw:
+                type_ = Optional[type_]
+            gql_t = ctx.transformer.transform(type_)
+            field = to_input_field(gql_t, field_kw)
             fields[ctx.hook__convert_name(name, for_type=field)] = field
 
         return fields
@@ -263,25 +246,12 @@ def iterate_class_attributes_for_input_type(cls, ctx: TransformContext):
         if default is not MISSING:
             kw["default_value"] = default
 
-        yield name, definition, kw
+        yield name, definition.type_, kw
 
 
 @cache_type
 def _transform_class_to_input_type(cls, ctx: TransformContext):
-    fields = []
-
-    dc_fields = {}
-    if is_dataclass(cls):
-        dc_fields = {f.name: f for f in dataclass_fields(cls)}
-
-    for name, definition, field_kw in iterate_class_attributes_for_input_type(cls, ctx):
-        type_ = definition.type_
-
-        dataclass_field = dc_fields.get(name)
-        if dataclass_field:
-            field_kw.update(dataclass_field.metadata)
-
-        fields.append((name, type_, field_kw))
+    fields = list(iterate_class_attributes_for_input_type(cls, ctx))
 
     def out_type(data: dict):
         return cls(**data)

@@ -2,7 +2,7 @@ from datetime import date, datetime
 from dataclasses import dataclass, field, InitVar
 from decimal import Decimal
 from enum import Enum
-from typing import Optional, List, Union, ClassVar
+from typing import Optional, List, Union, ClassVar, Annotated
 from uuid import UUID
 
 from hamcrest import *

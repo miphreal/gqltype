@@ -6,7 +6,7 @@ import enum
 from . import MISSING
 from .func import inspect_function
 
-_ResolveCallContext = namedtuple("ResolveCallContext", ["source", "info", "params"])
+_ResolveCallContext = namedtuple("_ResolveCallContext", ["source", "info", "params"])
 
 
 def _wrap_resolver(fn, ctx):

@@ -1,37 +1,30 @@
-from .decorators import query, resolver, mutation, subscription, schema_options
-from .utils import (
-    extend_params_definition,
-    override_params_definition,
-)
+from typing import Union as PyUnion, Type, cast
+
+from .decorators import mutation, query, resolver, schema_options, subscription
 from .graphql_types import (
-    ID,
-    UUID,
-    Bool,
-    Int,
-    Float,
-    Decimal,
-    String,
-    Date,
-    Time,
-    Duration,
-    DateTime,
+    PyDate,
+    PyDateTime,
+    PyDecimal,
+    PyDuration,
+    PyTime,
+    PyUUID,
+    ID as GraphQLID,
 )
 from .schema import Schema
-from .transform.type_container import T
+from .utils import extend_params_definition, override_params_definition, meta
+
+# shortcuts
+class ID(str):
+    __graphql_type__ = GraphQLID
 
 
-ID = T(ID)
-UUID = T(UUID)
-Bool = T(Bool)
-Int = T(Int)
-Float = T(Float)
-Decimal = T(Decimal)
-String = T(String)
-Date = T(Date)
-Time = T(Time)
-DateTime = T(DateTime)
-Duration = T(Duration)
-
-from typing import Union as PyUnion
-
-Union = lambda *types, **kw: T(PyUnion[tuple(types)], **kw)
+UUID = PyUUID
+Decimal = PyDecimal
+Date = PyDate
+Time = PyTime
+DateTime = PyDateTime
+Duration = PyDuration
+Bool = bool
+Int = int
+Float = float
+String = str

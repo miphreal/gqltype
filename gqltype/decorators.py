@@ -1,6 +1,10 @@
+from typing import Optional
+
+
 def query(func):
     func.__graphql_query__ = True
     return func
+
 
 resolver = query
 
@@ -27,22 +31,6 @@ def is_subscription(func):
     return getattr(func, "__graphql_subscription__", False)
 
 
-def graphql_name(name: str):
-    def wrap(obj):
-        obj.__graphql_name__ = name
-        return obj
-
-    return wrap
-
-
-def graphql_doc(doc: str):
-    def wrap(obj):
-        obj.__graphql_description__ = doc
-        return obj
-
-    return wrap
-
-
 def schema_options(**kwargs):
     def wrap(obj):
         existing_options = get_extra_schema_options(obj)
@@ -53,4 +41,4 @@ def schema_options(**kwargs):
 
 
 def get_extra_schema_options(obj):
-    return getattr(obj, '__graphql_schema_options__', None) or {}
+    return getattr(obj, "__graphql_schema_options__", None) or {}

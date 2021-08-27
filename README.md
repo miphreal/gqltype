@@ -10,6 +10,7 @@ Currently EXPERIMENTAL.
 - simple definition of GraphQL schema via python type annotations
 - builds schema based on `graphql-core>=3.0` library
 - asgi friendly
+- require explicit nullability definition with `Optional[T]`
 
 
 ## Installation

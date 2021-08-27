@@ -3,7 +3,6 @@ import typing
 import graphql
 
 from ..utils import cache_type, get_name, is_typing_type, filter_out_none_type
-from .type_container import T
 
 
 def _to_union(**kwargs):
@@ -56,10 +55,11 @@ def _transform_union(t, ctx):
     else:
         TypeError("Cannot transform {t} to union: unknown definition.")
 
-    # We pass `allow_null=True` as graphql union definition cannot be
-    # defined with nullable types.
+    # graphql union cannot be defined with nullable types.
     types_ = filter_out_none_type(types_)
-    gql_types = [ctx.transformer.transform(_t, allow_null=True) for _t in types_]
+    gql_types = [
+        graphql.get_nullable_type(ctx.transformer.transform(_t)) for _t in types_
+    ]
 
     # Sanity check
     for t in gql_types:

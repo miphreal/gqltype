@@ -50,7 +50,7 @@ def get_interfaces(cls):
 
 def get_annotations(obj):
     """Returns type annotations for function, module or class"""
-    return typing.get_type_hints(obj)
+    return typing.get_type_hints(obj, include_extras=True)
 
 
 @dataclass

@@ -5,7 +5,7 @@ description = "Show examples from GraphQL tutorial"
 authors = ["miphreal <miphreal@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "~3.8"
+python = "~3.9"
 starlette = "^0.13.4"
 uvicorn = "^0.11.5"
 gqltype = {"path" = "../.."}

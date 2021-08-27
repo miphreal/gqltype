@@ -1,9 +1,7 @@
-from collections import ChainMap, namedtuple
+from collections import ChainMap
 from functools import partial
-import inspect
 import logging
-import operator
-from typing import Tuple
+from typing import Tuple, TYPE_CHECKING
 
 from .utils.resolver import (
     prepare_field_resolver,
@@ -17,6 +15,10 @@ from .utils.resolver import (
     prepare_input_object_type_out_type,
 )
 from .utils.camel_case import to_camel_case
+from .utils import get_name, get_doc
+
+if TYPE_CHECKING:
+    from .transform import Transformer
 
 logger = logging.getLogger(__name__)
 
@@ -118,8 +120,7 @@ class RootContext(PresetsContext):
     debug: bool = False
 
     # Default options
-    # - require explicit nullability definition with `Optional[T]`
-    explicit_nullability: bool = True
+
     # - function prefixes to disntinquish resolve / mutate and subscribe methods
     resolve_method_name_prefix: str = "resolve_"
     mutate_method_name_prefix: str = "mutate_"
@@ -176,3 +177,9 @@ class RootContext(PresetsContext):
 class TransformContext(RootContext):
     transformer: "Transformer"
     types_cache: dict
+
+    def get_graphql_type_name(self, type_):
+        return get_name(type_)
+
+    def get_graphql_type_description(self, type_):
+        return get_doc(type_)

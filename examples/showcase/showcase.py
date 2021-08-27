@@ -5,7 +5,6 @@ https://graphql.org/learn/schema/
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
 
 import gqltype
 
@@ -23,7 +22,7 @@ class Character:
     """An individual person within the Star Wars universe"""
 
     name: str
-    appears_in: List[Episode]
+    appears_in: list[Episode]
 
 
 class LengthUnit(Enum):
@@ -55,7 +54,7 @@ async def get_starship() -> Starship:
     return Starship(id="F1000", name="Millennium Falcon", length=34.75)
 
 
-def add_character(name: str, appears_in: List[Episode]) -> Character:
+def add_character(name: str, appears_in: list[Episode]) -> Character:
     return Character(name=name, appears_in=appears_in)
 
 

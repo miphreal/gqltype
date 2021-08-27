@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, fields
 
-from typing import get_type_hints
+from typing import get_type_hints, Annotated
 
 from gqltype.utils.cls import get_annotations
 
@@ -73,4 +71,16 @@ def test_can_get_fn_annotations__all_types_in_global_ns():
         "attr": bool,
         "attr1": SomeTypeGlobalNS,
         "return": SomeTypeGlobalNS,
+    }
+
+
+def test_annotated_type():
+    def fn(attr: Annotated[str, {}]) -> Annotated[int, {}]:
+        ...
+
+    annotations = get_annotations(fn)
+
+    assert annotations == {
+        "attr": Annotated[str, {}],
+        "return": Annotated[int, {}],
     }

@@ -11,6 +11,7 @@ from .time import GraphQLTime as Time, PyTime
 from .datetime import GraphQLDateTime as DateTime, PyDateTime
 from .duration import GraphQLDuration as Duration, PyDuration
 from .uuid import GraphQLUUID as UUID, PyUUID
+from .nothing import GraphQLNothing, PyNoneType
 
 SUPPORTED_TYPES = {}
 
@@ -27,6 +28,7 @@ register_type(float, Float)
 register_type(str, String)
 
 # Extra types
+register_type(PyNoneType, GraphQLNothing)
 register_type(PyDecimal, Decimal)
 register_type(PyUUID, UUID)
 register_type(PyDate, Date)

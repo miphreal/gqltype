@@ -1,25 +1,32 @@
-from __future__ import annotations
-
+import gqltype
 from tests.utils import *
 
-from gqltype import Schema, T
+from gqltype import Schema, meta
 
 schema = Schema()
 
-transform = schema.transformer.transform
+
+def transform(t, **opts):
+    # We pass type as Optional[t] so it's not wrapped with GraphqlNonNull
+    return schema.transformer.transform(Optional[t], **opts)
 
 
-def test_transform_bare_class():
+def test_transform_gets_correct_name_and_description_from_a_class():
     class ExampleType:
         """Type description"""
 
+        attr: int
+
     assert_that(
-        transform(ExampleType, allow_null=True),
+        transform(ExampleType),
         has_properties({"name": "ExampleType", "description": "Type description"}),
     )
 
 
 @pytest.mark.parametrize("t,gql_t", TYPES.items())
+@pytest.mark.parametrize(
+    "t_invariant", [lambda t: t, lambda t: Annotated[t, gqltype.meta()]]
+)
 @pytest.mark.parametrize(
     "match",
     [
@@ -30,17 +37,15 @@ def test_transform_bare_class():
         lambda t, gql_t: (Optional[List[Optional[t]]], f"[{gql_t}]"),
     ],
 )
-def test_transform_python_types(t, gql_t, match):
-    T, GQL_T = match(t, gql_t)
+def test_transform_python_types(t, gql_t, match, t_invariant):
+    T, GQL_T = match(t_invariant(t), gql_t)
 
     class ExampleType:
         attr: T
 
     ExampleType.__annotations__["attr"] = T
 
-    assert_that(
-        transform(ExampleType, allow_null=True).fields["attr"], is_graphql_field(GQL_T)
-    )
+    assert_that(transform(ExampleType).fields["attr"], is_graphql_field(GQL_T))
 
 
 def test_transform_enum():
@@ -54,8 +59,7 @@ def test_transform_enum():
     ExampleType.__annotations__["attr"] = SomeType
 
     assert_that(
-        transform(ExampleType, allow_null=True).fields["attr"],
-        is_graphql_field("SomeType!"),
+        transform(ExampleType).fields["attr"], is_graphql_field("SomeType!"),
     )
 
 
@@ -63,9 +67,9 @@ def test_transform_enum__full_declaration():
     from graphql.type.definition import GraphQLEnumValue
 
     class SomeType(Enum):
-        VAL1: T(
-            int, description="Some description", deprecation_reason="Deprecated."
-        ) = 1
+        VAL1: Annotated[
+            int, meta(description="Some description", deprecation_reason="Deprecated."),
+        ] = 1
         VAL2 = 2
 
     class ExampleType:
@@ -79,8 +83,7 @@ def test_transform_enum__full_declaration():
     ExampleType.__annotations__["attr"] = SomeType
 
     assert_that(
-        transform(ExampleType, allow_null=True).fields["attr"],
-        is_graphql_field("SomeType!"),
+        transform(ExampleType).fields["attr"], is_graphql_field("SomeType!"),
     )
 
 
@@ -91,7 +94,7 @@ def test_camel_case_mode__on():
         def resolve_attr_name(self, param_name: int):
             return self
 
-    gql_type = transform(ExampleType, allow_null=True, preset__camel_case=True)
+    gql_type = transform(ExampleType, preset__camel_case=True)
     assert "attrName" in gql_type.fields
     assert "paramName" in gql_type.fields["attrName"].args
 
@@ -103,6 +106,6 @@ def test_camel_case_mode__off():
         def resolve_attr_name(self, param_name: int):
             return self
 
-    gql_type = transform(ExampleType, allow_null=True, preset__camel_case=False)
+    gql_type = transform(ExampleType, preset__camel_case=False)
     assert "attr_name" in gql_type.fields
     assert "param_name" in gql_type.fields["attr_name"].args

@@ -1,14 +1,13 @@
 import graphql
-from graphql.language import ast
 
-from ..utils import NoneType
+from ..utils import NoneType as PyNoneType
 
 
-def serialize(value: NoneType):
+def serialize(value: PyNoneType):
     return None
 
 
-def coerce(value: NoneType):
+def coerce(value: PyNoneType):
     return None
 
 

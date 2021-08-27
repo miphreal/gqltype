@@ -1,12 +1,10 @@
-from collections import ChainMap
 import logging
-from typing import Optional
 
 import graphql
 
 from ..context import TransformContext, RootContext
 from ..decorators import get_extra_schema_options
-from ..utils import resolve_thunk, UnwrappedType, MISSING
+from ..utils import resolve_thunk, unwrap_optional_type, unwrap_type_container
 from . import (
     transform_graphql_type,
     transform_general_type,
@@ -14,9 +12,7 @@ from . import (
     transform_enum,
     transform_union,
     transform_type_hint,
-    transform_nothing_type,
 )
-from .type_container import T
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +21,6 @@ logger = logging.getLogger(__name__)
 class Transformer:
     def __init__(self, root_context: RootContext):
         self.transformations = [
-            transform_nothing_type,
             transform_graphql_type,
             transform_type_hint,
             transform_general_type,
@@ -35,33 +30,30 @@ class Transformer:
         ]
         self.ctx = TransformContext(root_context, transformer=self, types_cache={})
 
-    def transform(self, t, *, allow_null=MISSING, **kw):
-        logger.debug(
-            "[TRANSFORM] Try to transform %r with (allow_null=%s, %s)",
-            t,
-            allow_null,
-            kw,
-        )
+    def transform(self, t, **context_options):
+        logger.debug("[TRANSFORM] Try to transform %r", t)
 
-        t = resolve_thunk(t)
+        ctx = self.ctx(**context_options)
 
-        # Unwrap type container
-        if isinstance(t, T):
-            allow_null = t.allow_null if t.allow_null is not MISSING else allow_null
-            kw = {**t.graphql_kw, **kw}
-            return self.transform(t.type_, allow_null=allow_null, **kw)
+        allow_null = False
 
-        ctx = self.ctx(origin_type=t, allow_null=allow_null, **kw)
+        while True:
+            _t = resolve_thunk(t)
+            _t, _ = unwrap_type_container(_t)
+            _t, _allow_null = unwrap_optional_type(_t)
+            allow_null = allow_null or _allow_null
+
+            if _t is t:
+                t = _t
+                break
+
+            t = _t
 
         extra_options = get_extra_schema_options(t)
         if extra_options:
             ctx = ctx(**extra_options)
 
         gql_t = self._transform(t, ctx=ctx)
-        # The case with unwrapping types
-        # (they don't need nullability handling)
-        if isinstance(gql_t, UnwrappedType):
-            return gql_t.final_type
 
         # Catch if `t` was not converted
         if not graphql.is_type(gql_t):
@@ -89,11 +81,7 @@ class Transformer:
     def _handle_nullability(self, gql_t, allow_null):
         gql_t = graphql.get_nullable_type(gql_t)
 
-        if (
-            allow_null is False
-            or allow_null is MISSING
-            and self.ctx.explicit_nullability
-        ):
+        if not allow_null:
             gql_t = graphql.GraphQLNonNull(gql_t)
 
         return gql_t

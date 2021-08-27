@@ -1,10 +1,18 @@
 import enum
+from typing import List, Type
 
 import graphql
 from graphql.type.definition import GraphQLEnumValue
 
-from ..utils import cache_type, get_annotations, get_name, get_doc, is_class
-from .type_container import T
+from ..utils import (
+    cache_type,
+    get_annotations,
+    get_doc,
+    get_name,
+    is_class,
+    is_type_container,
+    unwrap_type_container,
+)
 
 
 class GraphQLEnumType(graphql.GraphQLEnumType):
@@ -23,22 +31,28 @@ def _to_enum_value(value, ctx) -> GraphQLEnumValue:
 
 
 @cache_type
-def _transform_enum(enum_cls: enum.Enum, ctx) -> graphql.GraphQLEnumType:
+def _transform_enum(enum_cls: Type[enum.Enum], ctx) -> graphql.GraphQLEnumType:
     annotations = get_annotations(enum_cls)
 
     values = {}
 
-    for enum_val in list(enum_cls):
+    enum_values: List[enum.Enum] = list(enum_cls)
+
+    for enum_val in enum_values:
         annotation = annotations.get(enum_val.name)
-        if isinstance(annotation, T):
-            value = _to_enum_value(enum_val, ctx(**annotation.graphql_kw))
+        if is_type_container(annotation):
+            t, meta = unwrap_type_container(annotation)
+            value = _to_enum_value(
+                enum_val, meta.meta
+            )  # TODO.`meta.meta` think of a better interface
         else:
             value = _to_enum_value(enum_val, ctx)
+        value = _to_enum_value(enum_val, ctx)
 
         values[enum_val.name] = value
 
-    name=get_name(enum_cls)
-    description=get_doc(enum_cls)
+    name = get_name(enum_cls)
+    description = get_doc(enum_cls)
 
     if ctx.recognize_enum_output_values:
         return GraphQLEnumType(

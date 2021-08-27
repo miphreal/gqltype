@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Dict, List, NamedTuple, get_type_hints
+from typing import Any, Callable, Dict, NamedTuple, Tuple, get_type_hints
 
 PARAMS_DEFINITION_ATTR = "__graphql_params_definition__"
 OVERRIDE_OP = "override"
@@ -8,12 +8,12 @@ EXTEND_OP = "extend"
 
 
 class ParamsDefinition(NamedTuple):
-    args: List[str]
+    args: Tuple[str, ...]
     defaults: Dict[str, Any]
     type_hints: Dict[str, Any]
 
 
-def _append_params_operation(fn, op, value):
+def _append_params_operation(fn: Callable, op, value):
     params_ops = getattr(fn, PARAMS_DEFINITION_ATTR, None)
     if params_ops is None:
         params_ops = [[PRESERVE_OP, fn]]
@@ -21,7 +21,9 @@ def _append_params_operation(fn, op, value):
     setattr(fn, PARAMS_DEFINITION_ATTR, params_ops)
 
 
-def inspect_function(fn, with_redefined_params: bool = True) -> ParamsDefinition:
+def inspect_function(
+    fn: Callable, with_redefined_params: bool = True
+) -> ParamsDefinition:
     if with_redefined_params and hasattr(fn, PARAMS_DEFINITION_ATTR):
         return _calc_prams_definition(fn)
 
@@ -33,7 +35,7 @@ def inspect_function(fn, with_redefined_params: bool = True) -> ParamsDefinition
             dict(zip(argspec.args[-len(argspec.defaults) :], argspec.defaults))
         )
 
-    return (arguments, defaults, get_type_hints(fn))
+    return ParamsDefinition(tuple(arguments), defaults, get_type_hints(fn, include_extras=True))
 
 
 def merge_params_definitions(
@@ -46,10 +48,10 @@ def merge_params_definitions(
     defautls = {**defaults1, **defaults2}
     type_hints = {**hints1, **hints2}
 
-    return args, defautls, type_hints
+    return ParamsDefinition(tuple(args), defautls, type_hints)
 
 
-def _calc_prams_definition(fn):
+def _calc_prams_definition(fn: Callable) -> ParamsDefinition:
     params_ops = getattr(fn, PARAMS_DEFINITION_ATTR, None) or []
 
     defs = ParamsDefinition((), {}, {})
@@ -66,9 +68,9 @@ def _calc_prams_definition(fn):
     return defs
 
 
-def override_params_definition(fn, defs):
+def override_params_definition(fn: Callable, defs: ParamsDefinition) -> None:
     _append_params_operation(fn, OVERRIDE_OP, defs)
 
 
-def extend_params_definition(fn, defs):
+def extend_params_definition(fn: Callable, defs: ParamsDefinition) -> None:
     _append_params_operation(fn, EXTEND_OP, defs)

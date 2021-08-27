@@ -5,7 +5,6 @@ https://relay.dev/graphql/connections.htm
 """
 from abc import ABC
 from dataclasses import dataclass
-from functools import wraps
 from typing import NamedTuple, List, Optional
 
 import gqltype
@@ -13,11 +12,15 @@ import gqltype.utils
 from gqltype.utils.func import extend_params_definition, ParamsDefinition
 
 
+class NodeID(gqltype.ID):
+    """The id of the object"""
+
+
 @dataclass
 class Node(ABC):
     """An object with an ID"""
 
-    id: gqltype.ID(description="The id of the object", allow_null=True)
+    id: NodeID
 
 
 def _connection_type(
@@ -65,14 +68,27 @@ def prepare_connection_slice(
     before = pagination_params.get("before")
     last = pagination_params.get("last")
 
+    start: Optional[int]
+    end: Optional[int]
+
     # It's allowed to have either after/first or before/last params, not both
     if after or first is not None:
         start = int(after) if after else 0
-        end = start + (first or limit)
+        first = first if first is not None else limit
+        if first is not None:
+            end = start + first
+        else:
+            end = None
+
     elif before or last is not None:
         end = int(before) if before else len(data)
-        start = end - (last or limit)
-        start = 0 if start < 0 else start
+        last = last if last is not None else limit
+        if last is not None:
+            start = end - last
+        else:
+            start = 0
+        start = 0 if start <= 0 else start
+
     else:
         start, end = 0, limit
 

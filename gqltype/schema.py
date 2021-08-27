@@ -61,23 +61,20 @@ class Schema:
         mutations = list(map(mutation, self._mutations))
         subscriptions = list(map(subscription, self._subscriptions))
 
-        extra_types = [
-            self.transformer.transform(t, allow_null=True) for t in self._types
-        ]
+        def _transform_top_type(t):
+            return graphql.get_nullable_type(self.transformer.transform(t))
+
+        extra_types = list(map(_transform_top_type, self._types))
 
         return graphql.GraphQLSchema(
-            query=self.transformer.transform(
-                generate_root_type(queries, name="Query"), allow_null=True
-            )
+            query=_transform_top_type(generate_root_type(queries, name="Query"))
             if queries
             else None,
-            mutation=self.transformer.transform(
-                generate_root_type(mutations, name="Mutation"), allow_null=True
-            )
+            mutation=_transform_top_type(generate_root_type(mutations, name="Mutation"))
             if mutations
             else None,
-            subscription=self.transformer.transform(
-                generate_root_type(subscriptions, name="Subscription"), allow_null=True
+            subscription=_transform_top_type(
+                generate_root_type(subscriptions, name="Subscription")
             )
             if subscriptions
             else None,

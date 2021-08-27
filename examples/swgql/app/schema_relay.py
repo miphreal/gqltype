@@ -4,7 +4,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
 import logging
-from typing import List, Literal, Optional, Union, NamedTuple, NewType
+from typing import List, Literal, Optional, Union, NamedTuple, NewType, Annotated
 
 import gqltype
 from gqltype.contrib.connection import (
@@ -95,7 +95,9 @@ def resolve_node_type(value, info, interface_type):
     }.get(id_prefix)
 
 
-async def node(id: str) -> gqltype.T(Node, resolve_type=resolve_node_type):
+async def node(
+    id: str,
+) -> Annotated[Node, gqltype.meta(resolve_type=resolve_node_type)]:
     obj_type = id.split(":", 1)[0]
     return await storage.get_object(obj_type, id)
 

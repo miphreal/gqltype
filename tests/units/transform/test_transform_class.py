@@ -1,8 +1,9 @@
+from typing import Annotated
 from tests.utils import *
 from gqltype.context import RootContext
 from gqltype.transform.transformer import Transformer
 from gqltype.transform.transform_class import transform, can_transform
-from gqltype.transform.type_container import T
+from gqltype import meta
 
 transformer = Transformer(RootContext())
 ctx = transformer.ctx
@@ -56,7 +57,7 @@ def test_collect_type_info():
 
         def resolve_x(
             self, a: int, c: int = 123, **kwargs
-        ) -> T(List[Optional[UnionX]], description="some union"):
+        ) -> Annotated[List[Optional[UnionX]], meta(description="some union")]:
             ...
 
         # def y(self, b):
@@ -68,15 +69,4 @@ def test_collect_type_info():
 
     from pprint import pprint as ppp
 
-    obj_type = transform(Example, transformer.ctx(allow_null=True))
-
-
-def test_exps1():
-    class T:
-        attr1 = 123
-        attr2 = 'abc'
-
-    obj_type = transform(T, transformer.ctx(allow_null=True))
-
-    import ipdb; ipdb.set_trace()
-    pass
+    obj_type = transform(Example, transformer.ctx())

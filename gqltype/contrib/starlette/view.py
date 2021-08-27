@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Mapping
 
 import graphql
 import gqltype
@@ -32,7 +33,7 @@ class GraphQLApp:
                     )
                 return await self.handle_graphiql(request)
 
-            data = request.query_params  # type: typing.Mapping[str, typing.Any]
+            data = request.query_params  # type: Mapping[str, Any]
 
         elif request.method == "POST":
             content_type = request.headers.get("Content-Type", "")

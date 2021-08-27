@@ -1,6 +1,6 @@
 from datetime import date as PyDate
 
-import aniso8601
+import aniso8601  # type: ignore
 import graphql
 from graphql.language import ast
 

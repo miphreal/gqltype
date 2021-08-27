@@ -1,45 +1,42 @@
-from collections import OrderedDict
-from dataclasses import is_dataclass, fields as dataclass_fields
 import enum
 import inspect
 import logging
-from functools import partial, wraps
-from typing import Set, Optional
+from collections import OrderedDict
+from typing import Optional, Set
 
 import graphql
 
 from ..context import TransformContext
-from ..decorators import is_query, is_subscription, is_mutation
+from ..decorators import is_mutation, is_query, is_subscription
 from ..graphql_types import ID
 from ..utils import (
+    MISSING,
     cache_type,
-    get_name,
-    get_doc,
     get_attr_definitions,
+    get_doc,
+    get_interfaces,
+    get_name,
     is_class,
     is_interface,
-    get_interfaces,
-    MISSING,
+    unwrap_type,
 )
-from ..utils.func import inspect_function
-
 
 logger = logging.getLogger(__name__)
 
 
-def to_field(t, ctx: TransformContext):
+def to_field(t, kw: dict):
     params = ("args", "resolve", "subscribe", "description", "deprecation_reason")
-    return graphql.GraphQLField(t, **{k: ctx[k] for k in params if k in ctx})
+    return graphql.GraphQLField(t, **{k: kw[k] for k in params if k in kw})
 
 
-def to_input_field(t, ctx: TransformContext):
+def to_input_field(t, kw: dict):
     params = ("description", "default_value", "out_name")
-    return graphql.GraphQLInputField(t, **{k: ctx[k] for k in params if k in ctx})
+    return graphql.GraphQLInputField(t, **{k: kw[k] for k in params if k in kw})
 
 
-def to_arg(t, ctx: TransformContext):
+def to_arg(t, kw: dict):
     params = ("description", "default_value", "out_name")
-    return graphql.GraphQLArgument(t, **{k: ctx[k] for k in params if k in ctx})
+    return graphql.GraphQLArgument(t, **{k: kw[k] for k in params if k in kw})
 
 
 def to_graphql_arguments(arguments, ctx: TransformContext):
@@ -52,7 +49,7 @@ def to_graphql_arguments(arguments, ctx: TransformContext):
         if ctx.auto_graphql_id and arg_name == "id" and arg_type is str:
             arg_type = ID
 
-        kw = {}
+        kw = {"out_name": arg_name, **unwrap_type(arg_type).graphql_kw}
 
         if isinstance(default, enum.Enum):
             default = default.value
@@ -60,13 +57,9 @@ def to_graphql_arguments(arguments, ctx: TransformContext):
         if default is not MISSING:
             kw["default_value"] = default
 
-        gql_arg_type = ctx.transformer.transform(
-            arg_type, allow_null=MISSING, is_input_type=True
-        )
+        gql_arg_type = ctx.transformer.transform(arg_type, is_input_type=True)
 
-        kw["out_name"] = arg_name
-
-        t = to_arg(gql_arg_type, ctx(**kw))
+        t = to_arg(gql_arg_type, kw)
         args[ctx.hook__convert_name(arg_name, for_type=t)] = t
 
     return args
@@ -77,6 +70,7 @@ def iterate_class_attributes_for_output_type(cls, ctx: TransformContext):
     subscribe_prefix = ctx.subscribe_method_name_prefix
 
     attrs = [
+        # Iterate over properties first, then over methods
         *get_attr_definitions(cls, only_props=True).values(),
         *get_attr_definitions(cls, only_funcs=True).values(),
     ]
@@ -84,13 +78,15 @@ def iterate_class_attributes_for_output_type(cls, ctx: TransformContext):
     names: Set[str] = set()
 
     for definition in attrs:
-        if not (definition.annotation or definition.type_):
+        type_ = definition.annotation or definition.type_
+        if not type_:
             continue
 
         name = definition.name
         value = definition.value
 
         resolve_fn = subscribe_fn = None
+
         field_kw = {}
 
         # function definition
@@ -148,12 +144,13 @@ def iterate_class_attributes_for_output_type(cls, ctx: TransformContext):
 
         field_kw["resolve"] = resolve_fn
         field_kw["args"] = graphql_arguments
+        field_kw.update(unwrap_type(type_).graphql_kw)
 
-        type_ = definition.type_
         if ctx.auto_graphql_id and name == "id" and type_ is str:
             type_ = ID
 
         yield name, type_, field_kw
+
         names.add(name)
 
 
@@ -230,9 +227,8 @@ def iterate_class_attributes_for_input_type(cls, ctx: TransformContext):
     attrs = [*get_attr_definitions(cls, only_props=True).values()]
 
     for definition in attrs:
-
-        # for now skip all fields without annotation/type
-        if not (definition.annotation or definition.type_):
+        type_ = definition.annotation or definition.type_
+        if not type_:
             continue
 
         name = definition.name
@@ -246,7 +242,7 @@ def iterate_class_attributes_for_input_type(cls, ctx: TransformContext):
         if default is not MISSING:
             kw["default_value"] = default
 
-        yield name, definition.type_, kw
+        yield name, type_, kw
 
 
 @cache_type

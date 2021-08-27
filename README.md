@@ -184,8 +184,6 @@ gives
 
 - generic resolvers for certain types?
 
-- gqltype.F ? -- field definition
-
 - core part and high level part
 
 - business level

@@ -4,14 +4,14 @@ import graphql
 
 from ..context import TransformContext, RootContext
 from ..decorators import get_extra_schema_options
-from ..utils import resolve_thunk, unwrap_optional_type, unwrap_type_container
+from ..utils.types import unwrap_type
 from . import (
     transform_graphql_type,
     transform_general_type,
     transform_class,
     transform_enum,
     transform_union,
-    transform_type_hint,
+    transform_list,
 )
 
 
@@ -22,10 +22,10 @@ class Transformer:
     def __init__(self, root_context: RootContext):
         self.transformations = [
             transform_graphql_type,
-            transform_type_hint,
             transform_general_type,
-            transform_enum,
+            transform_list,
             transform_union,
+            transform_enum,
             transform_class,
         ]
         self.ctx = TransformContext(root_context, transformer=self, types_cache={})
@@ -35,19 +35,7 @@ class Transformer:
 
         ctx = self.ctx(**context_options)
 
-        allow_null = False
-
-        while True:
-            _t = resolve_thunk(t)
-            _t, _ = unwrap_type_container(_t)
-            _t, _allow_null = unwrap_optional_type(_t)
-            allow_null = allow_null or _allow_null
-
-            if _t is t:
-                t = _t
-                break
-
-            t = _t
+        t, allow_null, _ = unwrap_type(t)
 
         extra_options = get_extra_schema_options(t)
         if extra_options:

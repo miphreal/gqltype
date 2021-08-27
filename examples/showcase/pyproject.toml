@@ -11,6 +11,7 @@ uvicorn = "^0.11.5"
 gqltype = {"path" = "../.."}
 
 [tool.poetry.dev-dependencies]
+ipdb = "^0.13.9"
 
 
 [build-system]

@@ -1,19 +1,16 @@
-from dataclasses import dataclass
-from typing import Optional
-
 import graphql
 
+from .context import RootContext
 from .decorators import (
-    query,
-    mutation,
-    subscription,
     is_mutation,
     is_query,
     is_subscription,
+    mutation,
+    query,
+    subscription,
 )
 from .transform import Transformer
-from .utils import is_class, get_name
-from .context import RootContext
+from .utils import get_name, is_class
 
 
 def generate_root_type(objs, name=None):

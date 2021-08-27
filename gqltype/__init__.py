@@ -1,17 +1,11 @@
-from typing import Union as PyUnion, Type, cast
+from typing import Annotated, Optional, Union
 
 from .decorators import mutation, query, resolver, schema_options, subscription
-from .graphql_types import (
-    PyDate,
-    PyDateTime,
-    PyDecimal,
-    PyDuration,
-    PyTime,
-    PyUUID,
-    ID as GraphQLID,
-)
+from .graphql_types import ID as GraphQLID
+from .graphql_types import PyDate, PyDateTime, PyDecimal, PyDuration, PyTime, PyUUID
 from .schema import Schema
-from .utils import extend_params_definition, override_params_definition, meta
+from .utils import extend_params_definition, meta, override_params_definition
+
 
 # shortcuts
 class ID(str):

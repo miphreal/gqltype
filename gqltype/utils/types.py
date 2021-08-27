@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 import logging
 import inspect
 from types import LambdaType
@@ -98,3 +97,30 @@ def unwrap_type_container(t):
         meta = meta if isinstance(meta, Meta) else None
         return t.__origin__, meta
     return t, None
+
+
+class UnwrappedTypeInfo(typing.NamedTuple):
+    type_: typing.Type
+    is_nullable: bool
+    graphql_kw: dict
+
+
+def unwrap_type(t: typing.Type) -> UnwrappedTypeInfo:
+    is_nullable = False
+    graphql_kw = {}
+
+    while True:
+        _t = resolve_thunk(t)
+        _t, meta = unwrap_type_container(_t)
+        if meta:
+            graphql_kw.update(meta.meta)
+        _t, _is_nullable = unwrap_optional_type(_t)
+        is_nullable = is_nullable or _is_nullable
+
+        if _t is t:
+            t = _t
+            break
+
+        t = _t
+
+    return UnwrappedTypeInfo(t, is_nullable, graphql_kw)

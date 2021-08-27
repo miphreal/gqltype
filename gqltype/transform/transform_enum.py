@@ -11,7 +11,7 @@ from ..utils import (
     get_name,
     is_class,
     is_type_container,
-    unwrap_type_container,
+    unwrap_type,
 )
 
 
@@ -41,10 +41,7 @@ def _transform_enum(enum_cls: Type[enum.Enum], ctx) -> graphql.GraphQLEnumType:
     for enum_val in enum_values:
         annotation = annotations.get(enum_val.name)
         if is_type_container(annotation):
-            t, meta = unwrap_type_container(annotation)
-            value = _to_enum_value(
-                enum_val, meta.meta
-            )  # TODO.`meta.meta` think of a better interface
+            value = _to_enum_value(enum_val, unwrap_type(annotation).graphql_kw)
         else:
             value = _to_enum_value(enum_val, ctx)
         value = _to_enum_value(enum_val, ctx)

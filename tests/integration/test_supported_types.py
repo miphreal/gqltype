@@ -64,8 +64,6 @@ def test_transform_enum():
 
 
 def test_transform_enum__full_declaration():
-    from graphql.type.definition import GraphQLEnumValue
-
     class SomeType(Enum):
         VAL1: Annotated[
             int, meta(description="Some description", deprecation_reason="Deprecated."),
@@ -75,7 +73,7 @@ def test_transform_enum__full_declaration():
     class ExampleType:
         attr: SomeType
 
-        def resolve_attr(self, info, a: SomeType = SomeType.VAL1):
+        def resolve_attr(self, a: SomeType = SomeType.VAL1):
             return self
 
         resolve_attr.__annotations__["a"] = SomeType

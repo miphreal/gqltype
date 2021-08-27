@@ -1,6 +1,4 @@
-from dataclasses import dataclass, fields
-
-from typing import get_type_hints, Annotated
+from typing import Annotated
 
 from gqltype.utils.cls import get_annotations
 
@@ -13,7 +11,6 @@ def test_can_get_class_annotations__non_global_scope():
     class SomeTypeLocalNS:
         attr: int
 
-    @dataclass
     class ExampleType:
         attr: str
         attr2: bool
@@ -29,7 +26,6 @@ def test_can_get_class_annotations__non_global_scope():
 
 
 def test_can_get_class_annotations__all_types_in_global_ns():
-    @dataclass
     class ExampleType:
         attr: str
         attr2: bool
@@ -74,13 +70,13 @@ def test_can_get_fn_annotations__all_types_in_global_ns():
     }
 
 
-def test_annotated_type():
-    def fn(attr: Annotated[str, {}]) -> Annotated[int, {}]:
+def test_annotated_type_is_preserved():
+    def fn(attr: Annotated[str, None]) -> Annotated[int, None]:
         ...
 
     annotations = get_annotations(fn)
 
     assert annotations == {
-        "attr": Annotated[str, {}],
-        "return": Annotated[int, {}],
+        "attr": Annotated[str, None],
+        "return": Annotated[int, None],
     }

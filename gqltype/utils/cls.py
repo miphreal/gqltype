@@ -109,7 +109,7 @@ def get_attr_definitions(cls, only_props=False, only_funcs=False):
 
         if graphql_fields is not MISSING and attr not in graphql_fields:
             logger.debug(
-                "[INSPECT:%s] Skip '%s': should be in __graphql_fields__ list.",
+                "[INSPECT:%s] Skip '%s': add it to __graphql_fields__ list to include.",
                 cls.__qualname__,
                 attr,
             )

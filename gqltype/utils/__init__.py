@@ -16,7 +16,6 @@ from .types import (
     get_name,
     is_optional_type,
     is_type_container,
-    is_typing_type,
     meta,
     resolve_thunk,
     unwrap_optional_type,

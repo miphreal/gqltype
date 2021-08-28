@@ -2,7 +2,7 @@ import typing
 
 import graphql
 
-from ..utils import cache_type, get_name, is_typing_type, filter_out_none_type
+from ..utils import cache_type, get_name, filter_out_none_type
 
 
 def _to_union(**kwargs):
@@ -13,9 +13,7 @@ def _to_union(**kwargs):
 
 def _is_union_annotation(t):
     """Checks if it's a Union[T1, T2] annotation"""
-    return (
-        is_typing_type(t) and hasattr(t, "__origin__") and t.__origin__ is typing.Union
-    )
+    return typing.get_origin(t) is typing.Union
 
 
 def _is_union_definition(t):
@@ -28,7 +26,7 @@ def _is_union_definition(t):
 
     # Union[T1, T2]
     if _is_union_annotation(t):
-        types_ = filter_out_none_type(t.__args__)
+        types_ = filter_out_none_type(typing.get_args(t))
 
         # At least two types are required
         # because `Union[str]` is the same as just `str`
@@ -50,7 +48,7 @@ def _transform_union(t, ctx):
 
     # handle Union[T1, T2, T3]
     elif _is_union_annotation(t):
-        types_ = t.__args__
+        types_ = typing.get_args(t)
 
     else:
         TypeError("Cannot transform {t} to union: unknown definition.")

@@ -189,3 +189,5 @@ gives
 - business level
     - validation for input values
     - serialization of output values
+
+- 3.10 TypedDict definition

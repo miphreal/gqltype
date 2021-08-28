@@ -36,23 +36,14 @@ def get_doc(obj: typing.Any) -> typing.Optional[str]:
     return inspect.getdoc(obj)
 
 
-def is_typing_type(t):
-    """Checks if it's something from `typing` module"""
-    return inspect.getmodule(t) is typing
-
-
 def is_optional_type(t):
     """Checks if it's a Union[T, NoneType] or Optional[T] (which is the same)"""
-    return (
-        is_typing_type(t)
-        and getattr(t, "__origin__", None) is typing.Union
-        and NoneType in getattr(t, "__args__", ())  # type: ignore
-    )
+    return typing.get_origin(t) is typing.Union and NoneType in typing.get_args(t)
 
 
 def unwrap_optional_type(t):
     if is_optional_type(t):
-        union_types = filter_out_none_type(t.__args__)
+        union_types = filter_out_none_type(typing.get_args(t))
         if len(union_types) == 1:
             return union_types[0], True
         return typing.Union[tuple(union_types)], True
@@ -86,16 +77,13 @@ def meta(**kwargs):
 
 
 def is_type_container(t):
-    return hasattr(t, "__metadata__") and repr(t).startswith("typing.Annotated[")
+    return typing.get_origin(t) is typing.Annotated
 
 
 def unwrap_type_container(t):
     if is_type_container(t):
-        meta = getattr(t, "__metadata__", None)
-        if meta and isinstance(meta, tuple):
-            meta = meta[0]
-        meta = meta if isinstance(meta, Meta) else None
-        return t.__origin__, meta
+        t, meta, *_ = typing.get_args(t)
+        return t, meta if isinstance(meta, Meta) else None
     return t, None
 
 
